@@ -1,10 +1,12 @@
 set(BRIM_TEST_SOURCES
   test.cpp
+  lexer.cpp
   object-ctor.cpp
   object-tostr.cpp
 )
 
 set(BRIM_TEST_TAGS
+  lexer
   object-ctor
   object-tostr
 )

@@ -7,6 +7,5 @@
 
 int main(int argc, char** argv)
 {
-    parse(std::cin);
     return 0;
 }

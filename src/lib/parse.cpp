@@ -1,15 +1,21 @@
 #include <iostream>
 
+#include "object.h"
+
 #include "parse.h"
 
 
-void parse(std::istream& stream)
+static void read_identifier(std::istream& source, std::string& token)
 {
-    Lexer lexer(stream);
-    std::string s;
-    while (lexer) {
-        lexer >> s;
-        std::cout << ">> " << s << std::endl;
+    while (true) {
+        char e = source.get();
+        if (e != '(' && e != ')' && e != '[' && e != ']' && e != '"' &&
+            e != ',' && e != '`' && e != '\'' && e != EOF && !std::isspace(e))
+            token.push_back(e);
+        else {
+            source.unget();
+            break;
+        }
     }
 }
 
@@ -20,42 +26,61 @@ void Lexer::read()
 
     token = "";
     int c, d, e;
+    bool escaped = false;
 
     switch ((c = source.get()))
     {
     case EOF: return;
-    case '(': token = "("; return;
-    case ')': token = ")"; return;
-    case '[': token = "["; return;
-    case ']': token = "]"; return;
-    case '"': {
+    case '(': case ')': case '[': case ']': case '`': case '\'':
+        token = c;
+        return;
+    case ',':
+        if ((d = source.get()) == '@')
+            token = ",@";
+        else {
+            source.unget();
+            token = ",";
+        }
+        break;
+    case '"':
         token = "\"";
+        escaped = false;
         while (true) {
             e = source.get();
-            if (e != EOF)
-                token.push_back(c);
-            if (e == '"' || e == EOF)
-                return;
-        }
-    }
-    case '#':
-        switch ((d = source.get())) {
-        case '(': token = "#("; return;
-        case 't': token = "#t"; return;
-        case 'f': token = "#f"; return;
-        default: token.insert(0, 1, d);
-        }
-    default: {
-        token.insert(0, 1, c);
-        while (true) {
-            e = source.get();
-            if (e != '(' && e != ')' && e != '[' && e != ']' && e != '"' && e != EOF && !std::isspace(e))
+            if (escaped) {
                 token.push_back(e);
+                escaped = false;
+            }
+            else if (e == '\\') {
+                token.push_back(e);
+                escaped = true;
+            }
             else {
-                source.unget();
-                break;
+                if (e != EOF)
+                    token.push_back(e);
+                if (e == '"' || e == EOF)
+                    return;
             }
         }
-    }
+    case '#':
+        token = c;
+        token.push_back(source.get());
+        if (token == "#(" || token == "#t" || token == "#f")
+            return;
+        read_identifier(source, token);
+        break;
+    default:
+        token = c;
+        read_identifier(source, token);
     }
 }
+
+// void parse(std::istream& stream, bool toplevel)
+// {
+//     Lexer lexer(stream);
+
+//     std::string s;
+//     while (lexer) {
+//         lexer >> s;
+//         std::cout << ">> " << s << std::endl;
+//     }

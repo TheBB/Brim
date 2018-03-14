@@ -30,7 +30,7 @@ private:
 };
 
 
-void parse(std::istream& stream);
+void parse(std::istream& stream, bool toplevel);
 
 
 #endif /* PARSE_H */
