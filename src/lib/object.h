@@ -59,6 +59,8 @@ public:
     Object(uint64_t data) : data(data) { }
     Object(void* data) : data((uint64_t)(data) + 1) { }
 
+    inline void destroy();
+
     uint64_t view() { return data; }
 
     Type type() const;
@@ -85,6 +87,15 @@ public:
     inline friend bool operator==(const Object lhs, const Object rhs);
     inline friend bool operator!=(const Object lhs, const Object rhs);
 
+    inline bool immediate() const {
+        Type tp = type();
+        return tp == Type::Fixnum || tp == Type::Character || tp == Type::False ||
+               tp == Type::True || tp == Type::EmptyList || tp == Type::Undefined;
+    }
+
+    inline bool marked() const { return deref<Header>()->mark; }
+    inline void set_mark(bool mark) { deref<Header>()->mark = mark; }
+
     bool proper_list(std::size_t nitems) const;
     bool proper_list(std::size_t min_items, std::size_t max_items) const;
     Object nth(std::size_t index) const;
@@ -110,6 +121,16 @@ struct Vector_ {
     Header hdr;
     std::vector<Object> array;
 };
+
+inline void Object::destroy() {
+    switch(type()) {
+    case Type::Symbol: delete deref<Symbol_>(); break;
+    case Type::String: delete deref<String_>(); break;
+    case Type::Pair: delete deref<Pair_>(); break;
+    case Type::Vector: delete deref<Vector_>(); break;
+    default: break;
+    }
+}
 
 template <typename T> inline T* Object::deref() const { return (T*)(data - 1); }
 inline void Object::set_type(Type type) { deref<Header>()->type = type; }
