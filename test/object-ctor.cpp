@@ -41,6 +41,9 @@ TEST_CASE("Pair constructor", "[object-ctor]") {
     REQUIRE(obj.proper_list(2));
     assert_symbol(obj.nth(0), "a");
     assert_symbol(obj.nth(1), "b");
+    assert_symbol(obj.car(), "a");
+    assert_symbol(obj.cadr(), "b");
+    REQUIRE(obj.cddr().type() == Type::EmptyList);
 }
 
 TEST_CASE("Vector constructor", "[object-ctor]") {

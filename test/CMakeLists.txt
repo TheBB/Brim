@@ -1,6 +1,7 @@
 set(BRIM_TEST_SOURCES
   test.cpp
   lexer.cpp
+  parser.cpp
   object-ctor.cpp
   object-tostr.cpp
 )
@@ -9,6 +10,7 @@ set(BRIM_TEST_TAGS
   lexer
   object-ctor
   object-tostr
+  parser
 )
 
 add_executable(test-brim ${BRIM_TEST_SOURCES})

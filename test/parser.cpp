@@ -60,6 +60,16 @@ TEST_CASE("Parse list", "[parser]") {
     assert_symbol(objects[0].nth(2), "c");
 }
 
+TEST_CASE("Parse list (explicit empty list)", "[parser]") {
+    auto objects = parse("(a b c . ())");
+
+    REQUIRE(objects.size() == 1);
+    REQUIRE(objects[0].proper_list(3));
+    assert_symbol(objects[0].nth(0), "a");
+    assert_symbol(objects[0].nth(1), "b");
+    assert_symbol(objects[0].nth(2), "c");
+}
+
 TEST_CASE("Parse dotted list", "[parser]") {
     auto objects = parse("(a b c . d)");
 

@@ -2,7 +2,6 @@
 #include <sstream>
 
 #include "catch.h"
-#include "test.h"
 
 #include "parse.h"
 
@@ -20,7 +19,7 @@ std::vector<std::string> tokenize(std::string code)
     return ret;
 }
 
-TEST_CASE("Symbols", "[lexer]") {
+TEST_CASE("Tokenize symbols", "[lexer]") {
     auto tokens = tokenize("a bcd ef");
 
     REQUIRE(tokens.size() == 3);

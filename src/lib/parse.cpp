@@ -75,6 +75,133 @@ void Lexer::read()
     }
 }
 
+static std::string initials = "!$%&*/:<=>?~_^";
+static std::string subsequents = ".+-";
+
+static bool legal_symbol(std::string token)
+{
+    if (token == "+" || token == "-" || token == "...")
+        return true;
+
+    char init = token[0];
+    if ((init < 'a' || init > 'z') && (init < 'A' || init > 'Z')
+        && initials.find(init) == std::string::npos)
+        return false;
+
+    for (char c : token.substr(1))
+        if ((c < 'a' || c > 'z') && (c < 'A' || c > 'Z')
+            && initials.find(c) == std::string::npos && subsequents.find(c) == std::string::npos)
+            return false;
+
+    return true;
+}
+
+static Object read_datum(Lexer& source)
+{
+    if (!source)
+        return Object::Undefined();
+
+    std::string token;
+    source >> token;
+
+    if (token == "#t")
+        return Object::True();
+    else if (token == "#f")
+        return Object::False();
+    else if (token[0] == '"') {
+        if (token.size() < 2 || token[token.size()-1] != '"')
+            return Object::Undefined();
+        token = token.substr(1, token.size()-2);
+        std::string value;
+        bool escaped = false;
+        for (char c : token) {
+            if (!escaped && c == '\\') {
+                escaped = true;
+                continue;
+            }
+            else if (!escaped)
+                value.push_back(c);
+            else if (escaped) {
+                switch (c) {
+                case '\\': case '"':
+                    value.push_back(c); break;
+                case 'n': value.push_back('\n'); break;
+                case 't': value.push_back('\t'); break;
+                default: return Object::Undefined();
+                }
+                escaped = false;
+            }
+        }
+        return escaped ? Object::Undefined() : Object::String(value);
+    }
+    else if (token == "(") {
+        Object head = Object::EmptyList(), tail;
+
+        while (source && source.peek() != ")" && source.peek() != ".") {
+            Object elt = read_datum(source);
+            if (elt.type() == Type::Undefined)
+                return Object::Undefined();
+            if (head.type() == Type::EmptyList) {
+                head = Object::Pair(elt, Object::EmptyList());
+                tail = head;
+            }
+            else {
+                tail.set_cdr(Object::Pair(elt, Object::EmptyList()));
+                tail = tail.cdr();
+            }
+        }
+
+        if (!source)
+            return Object::Undefined();
+        source >> token;
+
+        if (token == ".") {
+            Object elt = read_datum(source);
+            if (elt.type() == Type::Undefined)
+                return Object::Undefined();
+            tail.set_cdr(elt);
+
+            if (!source)
+                return Object::Undefined();
+            source >> token;
+        }
+
+        if (token != ")")
+            return Object::Undefined();
+        return head;
+    }
+    else if (token == "#(") {
+        std::vector<Object> elements;
+
+        while (source && source.peek() != ")") {
+            Object elt = read_datum(source);
+            if (elt.type() == Type::Undefined)
+                return Object::Undefined();
+            elements.push_back(elt);
+        }
+
+        if (!source)
+            return Object::Undefined();
+        source >> token;        // Closing parenthesis
+
+        Object ret = Object::Vector(elements.size());
+        for (std::size_t i = 0; i < elements.size(); i++)
+            ret[i] = elements[i];
+        return ret;
+    }
+    else if (legal_symbol(token))
+        return Object::Symbol(token);
+    else {
+        std::cout << "Weird token: '" << token << "'" << std::endl;
+        return Object::Undefined();
+    }
+}
+
+void Parser::read()
+{
+    obj = read_datum(source);
+}
+
 // void parse(std::istream& stream, bool toplevel)
 // {
 //     Lexer lexer(stream);

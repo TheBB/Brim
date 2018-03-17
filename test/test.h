@@ -2,6 +2,10 @@
 #define TEST_H
 
 
+#define assert_boolean(obj,val) do {                                    \
+        REQUIRE((obj).type() == ((val) ? Type::True : Type::False ));   \
+    } while(0)
+
 #define assert_fixnum(obj,val) do {             \
         REQUIRE((obj).type() == Type::Fixnum);  \
         REQUIRE((obj).fixnum() == (val));       \

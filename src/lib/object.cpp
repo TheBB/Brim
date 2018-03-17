@@ -72,7 +72,20 @@ std::ostream& operator<<(std::ostream& out, Object obj)
     case Type::EmptyList: out << "()"; break;
     case Type::Undefined: out << "#<undefined>"; break;
     case Type::Symbol: out << obj.string(); break;
-    case Type::String: out << '"' << obj.string() << '"'; break;
+    case Type::String: {
+        out << '"';
+        for (char c : obj.string()) {
+            switch (c) {
+            case '\n': out << "\\n"; break;
+            case '\t': out << "\\t"; break;
+            case '\\': case '"':
+                out << '\\' << c; break;
+            default: out << c;
+            }
+        }
+        out << '"';
+        break;
+    }
     case Type::Vector: {
         out << "#(";
         bool first = true;
