@@ -98,6 +98,8 @@ public:
 
     bool proper_list(std::size_t nitems) const;
     bool proper_list(std::size_t min_items, std::size_t max_items) const;
+    bool improper_list(std::size_t nitems) const;
+    bool improper_list(std::size_t min_items, std::size_t max_items) const;
     Object nth(std::size_t index) const;
 };
 

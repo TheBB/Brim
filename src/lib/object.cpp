@@ -121,6 +121,22 @@ bool Object::proper_list(std::size_t min_items, std::size_t max_items) const
     return min_items <= nitems && nitems <= max_items;
 }
 
+bool Object::improper_list(std::size_t nitems) const {
+    return improper_list(nitems, nitems);
+}
+
+bool Object::improper_list(std::size_t min_items, std::size_t max_items) const
+{
+    Object obj = *this;
+    std::size_t nitems = 0;
+    while (obj.type() == Type::Pair) {
+        nitems++;
+        obj = obj.cdr();
+    }
+
+    return min_items <= nitems && nitems <= max_items;
+}
+
 Object Object::nth(std::size_t index) const
 {
     Object obj = *this;
