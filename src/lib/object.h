@@ -13,6 +13,15 @@
 #define __EMPTYLIST 0x7
 #define __UNDEFINED 0xf
 
+#define DECONS(pre,post) inline Object c##post##pre##r() const { return c##pre##r().c##post##r(); }
+#define DECONSES(pre) DECONS(pre,a) DECONS(pre,d)
+#define ALL_DECONSES() \
+    DECONSES(a) DECONSES(d) DECONSES(aa) DECONSES(ad) \
+    DECONSES(da) DECONSES(dd) DECONSES(aaa) DECONSES(aad) \
+    DECONSES(ada) DECONSES(add) DECONSES(daa) DECONSES(dad) \
+    DECONSES(dda) DECONSES(ddd)
+
+
 enum class Type {
     Fixnum,                     //     0
     Character,                  //   011
@@ -75,6 +84,9 @@ public:
     inline Object cdr() const;
     inline void set_car(Object car);
     inline void set_cdr(Object cdr);
+
+    // All variations of car/cdr up to four levels deep
+    ALL_DECONSES()
 
     inline std::size_t size() const;
     inline void set_size(std::size_t size);
