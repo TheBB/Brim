@@ -1,4 +1,4 @@
-#include <iostream>
+#include <sstream>
 
 #include "object.h"
 
@@ -103,6 +103,13 @@ static bool legal_symbol(const Token& token)
     return true;
 }
 
+static Object error(Token& token, std::string msg)
+{
+    std::ostringstream payload;
+    payload << "At " << token.position() << ": " << msg;
+    return Object::Error(Object::Symbol("parse"), Object::String(payload.str()));
+}
+
 static Object read_datum(Lexer& source)
 {
     if (!source)
@@ -117,7 +124,7 @@ static Object read_datum(Lexer& source)
         return Object::False();
     else if (token[0] == '"') {
         if (token.size() < 2 || token[token.size()-1] != '"')
-            return Object::Undefined();
+            return error(token, "unmatched quote");
         token = token.substr(1, token.size()-2);
         std::string value;
         bool escaped = false;
@@ -134,20 +141,22 @@ static Object read_datum(Lexer& source)
                     value.push_back(c); break;
                 case 'n': value.push_back('\n'); break;
                 case 't': value.push_back('\t'); break;
-                default: return Object::Undefined();
+                default: return error(token, "unknown escape sequence");
                 }
                 escaped = false;
             }
         }
-        return escaped ? Object::Undefined() : Object::String(value);
+        return escaped ? error(token, "should never happen") : Object::String(value);
     }
     else if (token == "(") {
         Object head = Object::EmptyList(), tail;
 
         while (source && source.peek() != ")" && source.peek() != ".") {
             Object elt = read_datum(source);
+            if (elt.type() == Type::Error)
+                return elt;
             if (elt.type() == Type::Undefined)
-                return Object::Undefined();
+                return error(token, "unmatched parenthesis");
             if (head.type() == Type::EmptyList) {
                 head = Object::Pair(elt, Object::EmptyList());
                 tail = head;
@@ -159,22 +168,24 @@ static Object read_datum(Lexer& source)
         }
 
         if (!source)
-            return Object::Undefined();
+            return error(token, "unmatched parenthesis");
         source >> token;
 
         if (token == ".") {
             Object elt = read_datum(source);
+            if (elt.type() == Type::Error)
+                return elt;
             if (elt.type() == Type::Undefined)
-                return Object::Undefined();
+                return error(token, "unmatched parenthesis");
             tail.set_cdr(elt);
 
             if (!source)
-                return Object::Undefined();
+                return error(token, "unmatched parenthesis");
             source >> token;
         }
 
         if (token != ")")
-            return Object::Undefined();
+            return error(token, "unmatched parenthesis");
         return head;
     }
     else if (token == "#(") {
@@ -182,13 +193,15 @@ static Object read_datum(Lexer& source)
 
         while (source && source.peek() != ")") {
             Object elt = read_datum(source);
+            if (elt.type() == Type::Error)
+                return elt;
             if (elt.type() == Type::Undefined)
-                return Object::Undefined();
+                return error(token, "unmatched parenthesis");
             elements.push_back(elt);
         }
 
         if (!source)
-            return Object::Undefined();
+            return error(token, "unmatched parenthesis");
         source >> token;        // Closing parenthesis
 
         Object ret = Object::Vector(elements.size());
@@ -198,23 +211,11 @@ static Object read_datum(Lexer& source)
     }
     else if (legal_symbol(token))
         return Object::Symbol(token.string());
-    else {
-        std::cout << "Weird token: '" << token << "'" << std::endl;
-        return Object::Undefined();
-    }
+    else
+        return error(token, "unknown token");
 }
 
 void Parser::read()
 {
     obj = read_datum(source);
 }
-
-// void parse(std::istream& stream, bool toplevel)
-// {
-//     Lexer lexer(stream);
-
-//     std::string s;
-//     while (lexer) {
-//         lexer >> s;
-//         std::cout << ">> " << s << std::endl;
-//     }
