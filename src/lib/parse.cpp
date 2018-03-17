@@ -110,6 +110,13 @@ static Object error(Token& token, std::string msg)
     return Object::Error(Object::Symbol("parse"), Object::String(payload.str()));
 }
 
+#define RETURN_IF_ERROR(obj)                                            \
+    do { if ((obj).type() == Type::Error) return (obj); } while (0)
+#define ERROR_IF(cond, token, msg)                                      \
+    do { if (cond) return error((token), (msg)); } while (0)
+#define ERROR_IF_UNDEFINED(obj, token, msg)                             \
+    ERROR_IF((obj).type() == Type::Error, token, msg)
+
 static Object read_datum(Lexer& source)
 {
     if (!source)
@@ -123,8 +130,7 @@ static Object read_datum(Lexer& source)
     else if (token == "#f")
         return Object::False();
     else if (token[0] == '"') {
-        if (token.size() < 2 || token[token.size()-1] != '"')
-            return error(token, "unmatched quote");
+        ERROR_IF(token.size() < 2 || token[token.size()-1] != '"', token, "unmatched quote");
         token = token.substr(1, token.size()-2);
         std::string value;
         bool escaped = false;
@@ -153,10 +159,8 @@ static Object read_datum(Lexer& source)
 
         while (source && source.peek() != ")" && source.peek() != ".") {
             Object elt = read_datum(source);
-            if (elt.type() == Type::Error)
-                return elt;
-            if (elt.type() == Type::Undefined)
-                return error(token, "unmatched parenthesis");
+            RETURN_IF_ERROR(elt);
+            ERROR_IF_UNDEFINED(elt, token, "unmatched paranthesis");
             if (head.type() == Type::EmptyList) {
                 head = Object::Pair(elt, Object::EmptyList());
                 tail = head;
@@ -167,25 +171,20 @@ static Object read_datum(Lexer& source)
             }
         }
 
-        if (!source)
-            return error(token, "unmatched parenthesis");
+        ERROR_IF(!source, token, "unmatched paranthesis");
         source >> token;
 
         if (token == ".") {
             Object elt = read_datum(source);
-            if (elt.type() == Type::Error)
-                return elt;
-            if (elt.type() == Type::Undefined)
-                return error(token, "unmatched parenthesis");
+            RETURN_IF_ERROR(elt);
+            ERROR_IF_UNDEFINED(elt, token, "unmatched paranthesis");
             tail.set_cdr(elt);
 
-            if (!source)
-                return error(token, "unmatched parenthesis");
+            ERROR_IF(!source, token, "unmatched paranthesis");
             source >> token;
         }
 
-        if (token != ")")
-            return error(token, "unmatched parenthesis");
+        ERROR_IF(token != ")", token, "unmatched paranthesis");
         return head;
     }
     else if (token == "#(") {
@@ -193,15 +192,12 @@ static Object read_datum(Lexer& source)
 
         while (source && source.peek() != ")") {
             Object elt = read_datum(source);
-            if (elt.type() == Type::Error)
-                return elt;
-            if (elt.type() == Type::Undefined)
-                return error(token, "unmatched parenthesis");
+            RETURN_IF_ERROR(elt);
+            ERROR_IF_UNDEFINED(elt, token, "unmatched paranthesis");
             elements.push_back(elt);
         }
 
-        if (!source)
-            return error(token, "unmatched parenthesis");
+        ERROR_IF(!source, token, "unmatched paranthesis");
         source >> token;        // Closing parenthesis
 
         Object ret = Object::Vector(elements.size());
