@@ -1,4 +1,3 @@
-#include <iostream>
 #include <sstream>
 
 #include "catch.h"
@@ -6,13 +5,13 @@
 #include "parse.h"
 
 
-std::vector<std::string> tokenize(std::string code)
+std::vector<Token> tokenize(std::string code)
 {
     std::istringstream stream(code);
     Lexer lexer(stream);
-    std::vector<std::string> ret;
+    std::vector<Token> ret;
     while (lexer) {
-        std::string token;
+        Token token;
         lexer >> token;
         ret.push_back(token);
     }

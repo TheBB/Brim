@@ -8,12 +8,17 @@
 
 int main(int argc, char** argv)
 {
-    Frame& frame = Frame::make();
-    Object obj = Object::Pair(Object::EmptyList(), Object::EmptyList());
+    Lexer lexer(std::cin);
 
-    std::cout << GC::size() << std::endl;
-    GC::collect();
-    std::cout << GC::size() << std::endl;
+    std::vector<Token> ret;
+    while (lexer) {
+        Token token;
+        lexer >> token;
+        std::cout << ">> " << token << std::endl;
+        ret.push_back(token);
+    }
+
+    std::cout << ret.size() << std::endl;
 
     return 0;
 }

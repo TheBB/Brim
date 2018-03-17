@@ -5,7 +5,14 @@
 #include "parse.h"
 
 
-static void read_identifier(std::istream& source, std::string& token)
+std::ostream& operator<<(std::ostream& out, Token& token)
+{
+    out << token.string();
+    return out;
+}
+
+
+static void read_identifier(std::istream& source, Token& token)
 {
     while (true) {
         char e = source.get();
@@ -22,23 +29,23 @@ static void read_identifier(std::istream& source, std::string& token)
 void Lexer::read()
 {
     while (std::isspace(source.peek()))
-        source.get();
+        get();
 
-    token = "";
+    token = Token(pos);
     int c, d, e;
     bool escaped = false;
 
-    switch ((c = source.get()))
+    switch ((c = get()))
     {
     case EOF: return;
     case '(': case ')': case '[': case ']': case '`': case '\'':
-        token = c;
+        token.push_back(c);
         return;
     case ',':
-        if ((d = source.get()) == '@')
+        if ((d = get()) == '@')
             token = ",@";
         else {
-            source.unget();
+            unget();
             token = ",";
         }
         break;
@@ -46,7 +53,7 @@ void Lexer::read()
         token = "\"";
         escaped = false;
         while (true) {
-            e = source.get();
+            e = get();
             if (escaped) {
                 token.push_back(e);
                 escaped = false;
@@ -63,14 +70,14 @@ void Lexer::read()
             }
         }
     case '#':
-        token = c;
-        token.push_back(source.get());
+        token.push_back((char)c);
+        token.push_back(get());
         if (token == "#(" || token == "#t" || token == "#f")
             return;
         read_identifier(source, token);
         break;
     default:
-        token = c;
+        token.push_back((char)c);
         read_identifier(source, token);
     }
 }
@@ -78,7 +85,7 @@ void Lexer::read()
 static std::string initials = "!$%&*/:<=>?~_^";
 static std::string subsequents = ".+-";
 
-static bool legal_symbol(std::string token)
+static bool legal_symbol(const Token& token)
 {
     if (token == "+" || token == "-" || token == "...")
         return true;
@@ -101,7 +108,7 @@ static Object read_datum(Lexer& source)
     if (!source)
         return Object::Undefined();
 
-    std::string token;
+    Token token;
     source >> token;
 
     if (token == "#t")
@@ -190,7 +197,7 @@ static Object read_datum(Lexer& source)
         return ret;
     }
     else if (legal_symbol(token))
-        return Object::Symbol(token);
+        return Object::Symbol(token.string());
     else {
         std::cout << "Weird token: '" << token << "'" << std::endl;
         return Object::Undefined();
