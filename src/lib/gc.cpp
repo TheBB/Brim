@@ -32,6 +32,9 @@ static void mark(Object obj)
     case Type::Vector:
         for (Object elt : obj) { mark(elt); }
         break;
+    case Type::Error:
+        mark(obj.signal());
+        mark(obj.payload());
     default:
         break;
     }
@@ -48,7 +51,8 @@ void GC::collect()
             if (destroy)
                 obj.destroy();
             return destroy;
-        });
+        }
+    );
     for (Object obj : objects)
         obj.set_mark(false);
 }

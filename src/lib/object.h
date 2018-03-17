@@ -31,7 +31,7 @@ enum class Type {
     EmptyList,                  // 00111
     Undefined,                  // 01111
 
-    Symbol, String, Pair, Vector,
+    Symbol, String, Pair, Vector, Error
 };
 
 struct Header {
@@ -55,6 +55,7 @@ public:
     static Object String(std::string data);
     static Object Pair(Object car, Object cdr);
     static Object Vector(uint64_t n);
+    static Object Error(Object signal, Object payload);
 
 private:
     uint64_t data;
@@ -92,6 +93,11 @@ public:
     inline void set_size(std::size_t size);
     inline Object& operator[](std::size_t idx);
     inline const Object& operator[](std::size_t idx) const;
+
+    inline Object signal() const;
+    inline Object payload() const;
+    inline void set_signal(Object signal);
+    inline void set_payload(Object payload);
 
     inline std::vector<Object>::const_iterator begin();
     inline std::vector<Object>::const_iterator end();
@@ -136,6 +142,12 @@ struct Vector_ {
     std::vector<Object> array;
 };
 
+struct Error_ {
+    Header hdr;
+    Object signal;
+    Object payload;
+};
+
 inline void Object::destroy() {
     switch(type()) {
     case Type::Symbol: delete deref<Symbol_>(); break;
@@ -161,6 +173,11 @@ inline std::size_t Object::size() const { return deref<Vector_>()->array.size();
 inline void Object::set_size(std::size_t size) { deref<Vector_>()->array.resize(size); }
 inline Object& Object::operator[](std::size_t idx) { return deref<Vector_>()->array[idx]; }
 inline const Object& Object::operator[](std::size_t idx) const { return deref<Vector_>()->array[idx]; }
+
+inline Object Object::signal() const { return deref<Error_>()->signal; }
+inline Object Object::payload() const { return deref<Error_>()->payload; }
+inline void Object::set_signal(Object signal) { deref<Error_>()->signal = signal; }
+inline void Object::set_payload(Object payload) { deref<Error_>()->payload = payload; }
 
 inline std::vector<Object>::const_iterator Object::begin() { return deref<Vector_>()->array.begin(); }
 inline std::vector<Object>::const_iterator Object::end() { return deref<Vector_>()->array.end(); }
