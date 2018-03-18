@@ -34,11 +34,10 @@ static void mark(Object obj)
 
 void GC::collect()
 {
-    for (const Frame& frame : VM::frames()) {
+    for (const Frame& frame : VM::frames())
         for (Object obj : frame.stack())
             mark(obj);
-        mark(frame.get_error());
-    }
+    mark(VM::get_error());
     objects.remove_if(
         [] (Object obj) {
             bool destroy = !obj.marked() && obj.type() != Type::Symbol;

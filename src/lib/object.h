@@ -42,6 +42,7 @@ struct Header {
 class Object
 {
     friend class VM;
+    friend class Op;
 
 private:
     static std::map<std::string, Object> symtable;

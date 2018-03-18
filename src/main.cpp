@@ -7,8 +7,8 @@
 
 int main(int argc, char** argv)
 {
-    Object obj = parse_toplevel(std::cin);
-    std::cout << ">> " << obj << std::endl;
+    // Object obj = parse_toplevel(std::cin);
+    // std::cout << ">> " << obj << std::endl;
 
     return 0;
 }

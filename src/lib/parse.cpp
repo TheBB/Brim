@@ -108,31 +108,35 @@ static void error(Token& token, std::string msg)
 {
     std::ostringstream payload;
     payload << "At " << token.position() << ": " << msg;
-    VM::error(VM::Intern("parse"), VM::String(payload.str()));
+    VM::Intern("parse");
+    VM::String(payload.str());
+    Op::error();
 }
 
 #define ERROR(token, msg)                                               \
-    do { error((token), (msg)); return Object::Undefined; } while (0)
+    do { error((token), (msg)); return; } while (0)
 #define ERROR_IF(cond, token, msg)                                      \
     do { if (cond) ERROR(token, msg); } while (0)
-#define READ_OR_ERROR(name, token, msg)                                 \
-    Object name = read_datum(source);                                   \
+#define READ_OR_ERROR(token, msg)                                       \
+    read_datum(source);                                                 \
     RETURN_IF_ERROR;                                                    \
-    ERROR_IF((name).undefined(), token, msg)
+    ERROR_IF(VM::peek().undefined(), token, msg)
 
-static Object read_datum(Lexer& source)
+void read_datum(Lexer& source)
 {
     // If we return Undefined without setting an error, it signals EOF
-    if (!source)
-        return Object::Undefined;
+    if (!source) {
+        VM::push(Object::Undefined);
+        return;
+    }
 
     Token token;
     source >> token;
 
     if (token == "#t")
-        return Object::True;
+        VM::push(Object::True);
     else if (token == "#f")
-        return Object::False;
+        VM::push(Object::False);
 
     // String parsing
     else if (token[0] == '"') {
@@ -160,23 +164,15 @@ static Object read_datum(Lexer& source)
         }
         if (escaped)
             ERROR(token, "should never happen");
-        return VM::String(value);
+        Op::string(value);
     }
 
     // List parsing
     else if (token == "(") {
-        Object head = Object::EmptyList, tail;
-
+        std::size_t nelems = 0;
         while (source && source.peek() != ")" && source.peek() != ".") {
-            READ_OR_ERROR(elt, token, "unmatched paranthesis");
-            if (head.type() == Type::EmptyList) {
-                head = VM::Pair(elt, Object::EmptyList);
-                tail = head;
-            }
-            else {
-                tail.set_cdr(VM::Pair(elt, Object::EmptyList));
-                tail = tail.cdr();
-            }
+            READ_OR_ERROR(token, "unmatched paranthesis");
+            nelems++;
         }
 
         // At this point, we have EOF, a closing paren or a period
@@ -184,107 +180,105 @@ static Object read_datum(Lexer& source)
         ERROR_IF(!source, token, "unmatched paranthesis");
         source >> token;
 
-        // If a period, we need one more element, then get the next token
+        // Get the last cdr
         if (token == ".") {
-            READ_OR_ERROR(elt, token, "unmatched paranthesis");
-            tail.set_cdr(elt);
-
+            READ_OR_ERROR(token, "unmatched paranthesis");
             ERROR_IF(!source, token, "unmatched paranthesis");
             source >> token;
         }
+        else { VM::push(Object::EmptyList); }
 
         // Last token must be a closing paren
         ERROR_IF(token != ")", token, "unmatched paranthesis");
-        return head;
+
+        // Form the pairs
+        Op::list(nelems, false);
     }
 
     // Vector parsing
     else if (token == "#(") {
-        std::vector<Object> elements;
-
+        std::size_t nelems = 0;
         while (source && source.peek() != ")") {
-            READ_OR_ERROR(elt, token, "unmatched paranthesis");
-            elements.push_back(elt);
+            READ_OR_ERROR(token, "unmatched paranthesis");
+            nelems++;
         }
 
         ERROR_IF(!source, token, "unmatched paranthesis");
         source >> token;        // Closing parenthesis
 
-        return VM::Vector(elements);
+        Op::vector(nelems);
     }
 
     // Quoted structures
     else if (token == "'" || token == "`" || token == "," || token == ",@") {
-        READ_OR_ERROR(quoted, token, "quotation must have an argument");
-        Object quoter;
-        if (token == "'") quoter = VM::Intern("quote");
-        if (token == "`") quoter = VM::Intern("quasiquote");
-        if (token == ",") quoter = VM::Intern("unquote");
-        if (token == ",@") quoter = VM::Intern("unquote-splicing");
-        return VM::List({quoter, quoted});
+        if (token == "'") VM::Intern("quote");
+        if (token == "`") VM::Intern("quasiquote");
+        if (token == ",") VM::Intern("unquote");
+        if (token == ",@") VM::Intern("unquote-splicing");
+        READ_OR_ERROR(token, "quotation must have an argument");
+        Op::list(2);
     }
 
     else if (legal_symbol(token))
-        return VM::Intern(token.string());
+        Op::intern(token.string());
 
-    error(token, "unknown token");
-    return Object::Undefined;
+    else
+        error(token, "unknown token");
 }
 
-void Parser::read()
-{
-    obj = read_datum(source);
-}
-
-std::vector<Object> parse_all(std::istream& stream)
+void parse_all(std::istream& stream)
 {
     VM::push_frame();
-    Parser parser(stream);
 
-    std::vector<Object> forms;
-    Object form;
-    while (parser) {
-        parser >> form;
-        forms.push_back(form);
+    Lexer source(stream);
+    std::size_t nelems = 0;
+    while (source && !VM::has_error()) {
+        read_datum(source);
+        nelems++;
     }
 
-    VM::pop_frame();
-    return forms;
+    RET_IF_ERROR;
+
+    Op::list(nelems);
+    Op::ret();
 }
 
-Object parse_toplevel(std::istream& stream)
-{
-    VM::push_frame();
-    Parser parser(stream);
+// Object parse_toplevel(std::istream& stream)
+// {
+//     VM::push_frame();
+//     Parser parser(stream);
 
-    std::vector<Object> forms = { VM::Intern("begin") };
-    Object form;
-    while (parser) {
-        parser >> form;
-        forms.push_back(form);
-    }
+//     std::vector<Object> forms = { VM::Intern("begin") };
+//     Object form;
+//     while (parser) {
+//         parser >> form;
+//         forms.push_back(form);
+//     }
 
-    if (VM::has_error())
-        return Object::Undefined;
+//     if (VM::has_error())
+//         return Object::Undefined;
 
-    form = VM::List(forms);
-    VM::pop_frame();
-    return form;
-}
+//     form = VM::List(forms);
+//     VM::pop_frame();
+//     return form;
+// }
 
-Object parse_single(std::istream& stream)
-{
-    VM::push_frame();
-    Parser parser(stream);
+// Object parse_single(std::istream& stream)
+// {
+//     VM::push_frame();
+//     Parser parser(stream);
 
-    if (!parser) {
-        if (!VM::has_error())
-            VM::error(VM::Intern("parse"), VM::String("No data to parse"));
-        return Object::Undefined;
-    }
+//     if (!parser) {
+//         if (!VM::has_error()) {
+//             VM::Intern("parse");
+//             VM::String("No data to parse");
+//             Op::error();
+//         }
+//         return Object::Undefined;
+//     }
 
-    Object form;
-    parser >> form;
-    VM::pop_frame();
-    return form;
-}
+//     Object form;
+//     parser >> form;
+//     VM::pop_frame();
+//     return form;
+// }

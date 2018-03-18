@@ -7,6 +7,7 @@
 
 
 std::list<Frame> VM::_frames;
+Object VM::_error;
 
 Frame& VM::push_frame()
 {
@@ -56,8 +57,49 @@ Object VM::Vector(const std::vector<Object>& elements)
     return ret;
 }
 
-void VM::error(Object signal, Object payload)
+void Op::intern(const std::string& name)
 {
-    Object ret = Object::Error(signal, payload);
-    _frames.front().set_error(ret);
+    Object obj = Object::Symbol(name);
+    VM::push(obj);
+}
+
+void Op::string(const std::string& data)
+{
+    Object obj = Object::String(data);
+    VM::push(obj);
+}
+
+void Op::error()
+{
+    Object error = Object::Error(VM::peek(1), VM::peek(0));
+    VM::set_error(error);
+    VM::pop(2);
+}
+
+void Op::cons()
+{
+    VM::push(Object::Pair(VM::peek(1), VM::peek(0)), 2);
+}
+
+void Op::list(std::size_t nelems, bool fix_tail)
+{
+    if (fix_tail)
+        VM::push(Object::EmptyList);
+    for (; nelems > 0; nelems--)
+        Op::cons();
+}
+
+void Op::vector(std::size_t nelems)
+{
+    Object vec = Object::Vector(nelems);
+    for (std::size_t i = 0; i < nelems; i++)
+        vec[i] = VM::peek(nelems - i - 1);
+    VM::push(vec);
+}
+
+void Op::ret()
+{
+    Object retval = VM::peek();
+    VM::pop_frame();
+    VM::push(retval);
 }

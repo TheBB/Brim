@@ -6,6 +6,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 enable_testing()
 
-# add_subdirectory(third-party/bdwgc)
+set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG")
+
 add_subdirectory(src)
 add_subdirectory(test)

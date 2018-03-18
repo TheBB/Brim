@@ -1,5 +1,7 @@
 #include <istream>
 
+#include "vm.h"
+
 #include "object.h"
 
 
@@ -64,26 +66,28 @@ private:
 };
 
 
-class Parser {
-public:
-    Parser(std::istream& s) : source(Lexer(s)) { read(); }
-    explicit operator bool() const { return obj.defined(); }
+// class Parser {
+// public:
+//     Parser(std::istream& s) : source(Lexer(s)) { read(); }
+//     explicit operator bool() const {
+//         return !VM::has_error() && VM::peek().defined();
+//     }
 
-    Parser& operator>>(Object& tgt) {
-        tgt = obj;
-        read();
-        return *this;
-    }
+//     Parser& operator>>(Object& tgt) {
+//         tgt = VM::pop();
+//         read();
+//         return *this;
+//     }
 
-private:
-    void read();
+// private:
+//     void read();
 
-    Lexer source;
-    Object obj;
-};
+//     Lexer source;
+//     Object obj;
+// };
 
 
-std::vector<Object> parse_all(std::istream& stream);
+void parse_all(std::istream& stream);
 Object parse_toplevel(std::istream& stream);
 Object parse_single(std::istream& stream);
 
