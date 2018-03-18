@@ -41,21 +41,21 @@ struct Header {
 
 class Object
 {
+    friend class VM;
+
 private:
     static std::map<std::string, Object> symtable;
 
-public:
     static Object Fixnum(int64_t num) { return Object(2*num); }
     static Object Character(char c) { return Object((c << 3) | 0x3); }
-    static Object False() { return Object(__FALSE); }
-    static Object True() { return Object(__TRUE); }
-    static Object EmptyList() { return Object(__EMPTYLIST); }
-    static Object Undefined() { return Object(); }
-    static Object Symbol(std::string name);
-    static Object String(std::string data);
+    static Object String(const std::string& data);
     static Object Pair(Object car, Object cdr);
     static Object Vector(uint64_t n);
     static Object Error(Object signal, Object payload);
+    static Object Symbol(const std::string& name);
+
+public:
+    static Object False, True, EmptyList, Undefined;
 
 private:
     uint64_t data;
@@ -75,6 +75,8 @@ public:
 
     Type type() const;
     inline void set_type(Type type);
+    inline bool defined() const { return data != __UNDEFINED; }
+    inline bool undefined() const { return data == __UNDEFINED; }
 
     inline int64_t fixnum() const { return ((int64_t)data) / 2; }
     inline char character() const { return (char)(data >> 3); }
@@ -193,6 +195,6 @@ std::ostream& operator<<(std::ostream& out, Object obj);
     for(; tail.type() == Type::Pair;            \
         tail = tail.cdr(),                      \
         elt = tail.type() == Type::Pair ?       \
-        tail.car() : Object::Undefined())       \
+        tail.car() : Object::Undefined)         \
 
 #endif /* OBJECT_H */

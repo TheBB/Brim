@@ -5,19 +5,13 @@
 
 #include "object.h"
 #include "parse.h"
+#include "vm.h"
 
 
 std::vector<Object> parse(std::string code)
 {
     std::istringstream stream(code);
-    Parser parser(stream);
-    std::vector<Object> ret;
-    while (parser) {
-        Object obj;
-        parser >> obj;
-        ret.push_back(obj);
-    }
-    return ret;
+    return parse_all(stream);
 }
 
 TEST_CASE("Parse symbols", "[parser]") {

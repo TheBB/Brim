@@ -1,14 +1,16 @@
-#include <iostream>
-
 #include "gc.h"
 
 #include "object.h"
 
 
 std::map<std::string, Object> Object::symtable;
+Object Object::False = Object(__FALSE);
+Object Object::True = Object(__TRUE);
+Object Object::EmptyList = Object(__EMPTYLIST);
+Object Object::Undefined = Object(__UNDEFINED);
 
 
-Object Object::Symbol(std::string name)
+Object Object::Symbol(const std::string& name)
 {
     auto it = symtable.find(name);
     if (it != symtable.end())
@@ -21,7 +23,7 @@ Object Object::Symbol(std::string name)
     return obj;
 }
 
-Object Object::String(std::string data)
+Object Object::String(const std::string& data)
 {
     Object obj = GC::alloc<String_>();
     obj.set_type(Type::String);
@@ -116,7 +118,7 @@ std::ostream& operator<<(std::ostream& out, Object obj)
             out << elt;
             first = false;
         }
-        if (tail != Object::EmptyList())
+        if (tail != Object::EmptyList)
             out << " . " << tail;
         out << ")";
         break;

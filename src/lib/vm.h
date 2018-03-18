@@ -1,37 +1,60 @@
-#include "types.h"
+#include <list>
+
+#include "object.h"
 
 
 #ifndef VM_H
 #define VM_H
 
 
-void brim_initialize(void);
-void brim_reset(void);
-void brim_inhibit_collect(void);
-void brim_allow_collect(void);
-void brim_force_collect(void);
-void brim_count(size_t* ntotal, size_t* nlive, size_t* ndead);
+#define RETURN_IF_ERROR                                                 \
+    do { if (VM::has_error()) return Object::Undefined; } while (0)
 
-brimobj brim_make_intern(const char* name, size_t size);
-brimobj brim_make_string(const char* data, size_t size);
-brimobj brim_make_string_nullterm(const char* data);
-brimobj brim_make_pair(brimobj car, brimobj cdr);
-brimobj brim_make_vector(size_t size);
-brimobj brim_make_bytecode();
 
-void brim_new_frame(void);
-void brim_free_frame(void);
-brimobj* brim_save_stack(void);
-size_t brim_stack_size(void);
-void brim_restore_stack(brimobj* ptr);
-void brim_push(brimobj obj);
-void brim_pop_many(size_t nobjects);
-brimobj brim_pop(void);
-brimobj brim_pop_at(size_t index);
-brimobj brim_peek(size_t index);
-void brim_duplicate(void);
+class Frame
+{
+private:
+    std::list<Object> _stack;
+    Object _error;
 
-void brim_eval(void);
+public:
+    Frame() { };
+
+    inline void push(Object obj) { _stack.push_front(obj); }
+    inline Object pop() {
+        Object ret = _stack.front();
+        _stack.pop_front();
+        return ret;
+    }
+
+    inline bool has_error() const { return _error.defined(); }
+    inline void set_error(Object error) { _error = error; }
+    inline Object get_error() const { return _error; }
+
+    inline const std::list<Object> stack() const { return _stack; }
+};
+
+class VM
+{
+private:
+    static std::list<Frame> _frames;
+
+public:
+    static Frame& push_frame();
+    static void pop_frame();
+    static inline const std::list<Frame>& frames() { return _frames; }
+
+    static inline Object Fixnum(int64_t num) { return Object::Fixnum(num); }
+    static inline Object Character(char c) { return Object::Character(c); }
+    static inline Object Intern(const std::string& name) { return Object::Symbol(name); }
+    static Object String(const std::string& data);
+    static Object Pair(Object car, Object cdr);
+    static Object List(const std::vector<Object>& elements);
+    static Object Vector(const std::vector<Object>& elements);
+
+    static void error(Object signal, Object payload);
+    static inline bool has_error() { return _frames.front().has_error(); }
+};
 
 
 #endif /* VM_H */

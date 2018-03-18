@@ -7,27 +7,6 @@
 #ifndef GC_H
 #define GC_H
 
-class Frame
-{
-private:
-    static std::list<Frame> _frames;
-
-    std::list<Object> _stack;
-
-    Frame() {};
-
-public:
-    static Frame& make();
-    static inline const std::list<Frame>& frames() { return _frames; }
-
-    inline const std::list<Object> stack() const { return _stack; }
-    inline void push(Object obj) { _stack.push_front(obj); }
-    inline Object pop() {
-        Object ret = _stack.front();
-        _stack.pop_front();
-        return ret;
-    }
-};
 
 class GC
 {
@@ -54,5 +33,6 @@ public:
 
     static void collect();
 };
+
 
 #endif /* GC_H */

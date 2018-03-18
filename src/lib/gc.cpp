@@ -2,17 +2,9 @@
 #include <iostream>
 #include <stdlib.h>
 
+#include "vm.h"
+
 #include "gc.h"
-
-
-std::list<Frame> Frame::_frames;
-
-Frame& Frame::make()
-{
-    Frame frame;
-    _frames.push_front(frame);
-    return _frames.front();
-}
 
 
 std::list<Object> GC::objects;
@@ -42,13 +34,15 @@ static void mark(Object obj)
 
 void GC::collect()
 {
-    for (const Frame& frame : Frame::frames())
+    for (const Frame& frame : VM::frames()) {
         for (Object obj : frame.stack())
             mark(obj);
+        mark(frame.get_error());
+    }
     objects.remove_if(
         [] (Object obj) {
-            bool destroy = !obj.marked();
-            if (destroy)
+            bool destroy = !obj.marked() && obj.type() != Type::Symbol;
+            if (destroy )
                 obj.destroy();
             return destroy;
         }

@@ -67,7 +67,7 @@ private:
 class Parser {
 public:
     Parser(std::istream& s) : source(Lexer(s)) { read(); }
-    explicit operator bool() const { return obj.type() != Type::Undefined; }
+    explicit operator bool() const { return obj.defined(); }
 
     Parser& operator>>(Object& tgt) {
         tgt = obj;
@@ -83,7 +83,9 @@ private:
 };
 
 
-void parse(std::istream& stream, bool toplevel);
+std::vector<Object> parse_all(std::istream& stream);
+Object parse_toplevel(std::istream& stream);
+Object parse_single(std::istream& stream);
 
 
 #endif /* PARSE_H */
