@@ -66,30 +66,8 @@ private:
 };
 
 
-// class Parser {
-// public:
-//     Parser(std::istream& s) : source(Lexer(s)) { read(); }
-//     explicit operator bool() const {
-//         return !VM::has_error() && VM::peek().defined();
-//     }
-
-//     Parser& operator>>(Object& tgt) {
-//         tgt = VM::pop();
-//         read();
-//         return *this;
-//     }
-
-// private:
-//     void read();
-
-//     Lexer source;
-//     Object obj;
-// };
-
-
 void parse_all(std::istream& stream);
-Object parse_toplevel(std::istream& stream);
-Object parse_single(std::istream& stream);
+void parse_toplevel(std::istream& stream);
 
 
 #endif /* PARSE_H */

@@ -243,42 +243,15 @@ void parse_all(std::istream& stream)
     Op::ret();
 }
 
-// Object parse_toplevel(std::istream& stream)
-// {
-//     VM::push_frame();
-//     Parser parser(stream);
+void parse_toplevel(std::istream& stream)
+{
+    VM::push_frame();
 
-//     std::vector<Object> forms = { VM::Intern("begin") };
-//     Object form;
-//     while (parser) {
-//         parser >> form;
-//         forms.push_back(form);
-//     }
+    parse_all(stream);
+    RET_IF_ERROR;
 
-//     if (VM::has_error())
-//         return Object::Undefined;
-
-//     form = VM::List(forms);
-//     VM::pop_frame();
-//     return form;
-// }
-
-// Object parse_single(std::istream& stream)
-// {
-//     VM::push_frame();
-//     Parser parser(stream);
-
-//     if (!parser) {
-//         if (!VM::has_error()) {
-//             VM::Intern("parse");
-//             VM::String("No data to parse");
-//             Op::error();
-//         }
-//         return Object::Undefined;
-//     }
-
-//     Object form;
-//     parser >> form;
-//     VM::pop_frame();
-//     return form;
-// }
+    Op::intern("begin");
+    VM::swap();
+    Op::cons();
+    Op::ret();
+}

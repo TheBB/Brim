@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <vector>
 #include <list>
@@ -43,6 +44,7 @@ public:
         return ret;
     }
     inline void pop(std::size_t n) { _stack.erase(_stack.end() - n, _stack.end()); }
+    inline void swap() { std::iter_swap(_stack.end() - 1, _stack.end() - 2); }
 
     inline const std::vector<Object>& stack() const { return _stack; }
 };
@@ -75,6 +77,7 @@ public:
     static inline void push(Object obj, std::size_t n) { _frames.front().push(obj, n); }
     static inline Object pop() { return _frames.front().pop(); }
     static inline void pop(std::size_t n) { _frames.front().pop(n); }
+    static inline void swap() { _frames.front().swap(); }
 
     static inline bool has_error() { return _error.defined(); }
     static inline void set_error(Object error) { _error = error; }

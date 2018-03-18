@@ -7,8 +7,13 @@
 
 int main(int argc, char** argv)
 {
-    // Object obj = parse_toplevel(std::cin);
-    // std::cout << ">> " << obj << std::endl;
+    VM::push_frame();
+    parse_toplevel(std::cin);
+
+    if (VM::has_error())
+        std::cout << ">> " << VM::get_error() << std::endl;
+    else
+        std::cout << ">> " << VM::peek() << std::endl;
 
     return 0;
 }
