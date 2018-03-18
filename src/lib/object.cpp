@@ -49,6 +49,7 @@ Object Object::Vector(uint64_t size)
 Object Object::Error(Object signal, Object payload)
 {
     Object obj = GC::alloc<Error_>();
+    obj.set_type(Type::Error);
     obj.set_signal(signal);
     obj.set_payload(payload);
     return obj;
@@ -80,7 +81,7 @@ std::ostream& operator<<(std::ostream& out, Object obj)
     case Type::EmptyList: out << "()"; break;
     case Type::Undefined: out << "#<undefined>"; break;
     case Type::Symbol: out << obj.string(); break;
-    case Type::Error: out << "#<error " << obj.signal() << " " << obj.payload() << ">";
+    case Type::Error: out << "#<error " << obj.signal() << " " << obj.payload() << ">"; break;
     case Type::String: {
         out << '"';
         for (char c : obj.string()) {
