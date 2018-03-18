@@ -205,6 +205,17 @@ static Object read_datum(Lexer& source)
             ret[i] = elements[i];
         return ret;
     }
+    else if (token == "'" || token == "`" || token == "," || token == ",@") {
+        Object quoted = read_datum(source);
+        RETURN_IF_ERROR(quoted);
+        ERROR_IF_UNDEFINED(quoted, token, "quotation must have an argument");
+        Object quoter;
+        if (token == "'") quoter = Object::Symbol("quote");
+        if (token == "`") quoter = Object::Symbol("quasiquote");
+        if (token == ",") quoter = Object::Symbol("unquote");
+        if (token == ",@") quoter = Object::Symbol("unquote-splicing");
+        return Object::Pair(quoter, Object::Pair(quoted, Object::EmptyList()));
+    }
     else if (legal_symbol(token))
         return Object::Symbol(token.string());
     else
